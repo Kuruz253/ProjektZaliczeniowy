@@ -1,0 +1,85 @@
+
+import discord
+
+#            --- KLASA INTERFEJSU GRAFICZNEGO RADIA ---
+
+class RadioAdvancedMenu(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.status_msg={}
+
+    @discord.ui.button(emoji="⏮️", style=discord.ButtonStyle.secondary, row=0)
+    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        pass 
+
+    @discord.ui.button(emoji="⏸️", style=discord.ButtonStyle.secondary, row=0)
+    async def pause_resume_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        voice_client = interaction.guild.voice_client
+        if voice_client is None:
+            return await interaction.response.send_message("Bot nie jest połączony.", ephemeral=True)
+        else:
+            await interaction.response.send_message("Bot jest połączony.", ephemeral=True)
+
+        if voice_client.is_playing():
+            voice_client.pause()
+            await interaction.response.defer()
+            await self.status_msg[interaction.user.id].edit(content="pauza")
+
+        elif voice_client.is_paused():
+            voice_client.resume()
+            await interaction.response.defer()
+            await self.status_msg[interaction.user.id].edit(content="gra muzyka")
+            
+
+    @discord.ui.button(emoji="⏭️", style=discord.ButtonStyle.secondary, row=0)
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        pass
+
+    @discord.ui.button(emoji="🔇", style=discord.ButtonStyle.secondary, row=1)
+    async def mute_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        voice_client = interaction.guild.voice_client
+        if voice_client and voice_client.source:
+            voice_client.source.volume = 0.0
+
+    @discord.ui.button(emoji="🔉", style=discord.ButtonStyle.secondary, row=1)
+    async def vol_down_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        voice_client = interaction.guild.voice_client
+        if voice_client and voice_client.source:
+            current = voice_client.source.volume
+            voice_client.source.volume = max(0.0, current - 0.1)
+
+    @discord.ui.button(emoji="🔊", style=discord.ButtonStyle.secondary, row=1)
+    async def vol_up_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        voice_client = interaction.guild.voice_client
+        if voice_client and voice_client.source:
+            current = voice_client.source.volume
+            voice_client.source.volume = min(2.0, current + 0.1)
+
+
+    @discord.ui.button(emoji="📄", style=discord.ButtonStyle.secondary, row=2)
+    async def queue_button(self, interaction: discord.Interaction, button: discord.ui.Button):      #lista kolejka
+        #await interaction.response.send_message("Wyświetlanie kolejki (Placeholder)", ephemeral=True)
+        pass
+
+    @discord.ui.button(emoji="💾", style=discord.ButtonStyle.secondary, row=2)
+    async def save_button(self, interaction: discord.Interaction, button: discord.ui.Button):       #zapisane (ulubione?)
+        pass
+
+    @discord.ui.button(emoji="♾️", style=discord.ButtonStyle.secondary, row=2)
+    async def loop_track_button(self, interaction: discord.Interaction, button: discord.ui.Button):     #petla piosenki
+        pass
+
+    @discord.ui.button(emoji="🔁", style=discord.ButtonStyle.secondary, row=3)
+    async def loop_queue_button(self, interaction: discord.Interaction, button: discord.ui.Button):     #petla kolejki
+        pass
+
+    @discord.ui.button(emoji="❌", style=discord.ButtonStyle.danger, row=3)
+    async def x(self, interaction: discord.Interaction, button: discord.ui.Button):     #stop
+        voice_client = interaction.guild.voice_client
+        if voice_client and (voice_client.is_playing() or voice_client.is_paused()):
+            voice_client.stop()
+        
+
+    @discord.ui.button(emoji="🔀", style=discord.ButtonStyle.blurple, row=3)
+    async def shuffle_button(self, interaction: discord.Interaction, button: discord.ui.Button):        #losowa kolejka z zapisanych
+        pass
