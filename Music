@@ -1,0 +1,119 @@
+
+import discord
+from discord.ext import commands
+import RadioAdvancedMenu
+import YTDLSource as YTDLSource
+
+class Music(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def testjoin(self, ctx, url):
+        """Joins a voice channel"""
+        channel = self.bot.get_channel(1523625156038103101)
+
+        if channel is None:
+            return await ctx.send("Nie odnaleziono kanału o podanym ID.")
+
+        if ctx.voice_client is not None:
+            await ctx.voice_client.move_to(channel)
+        else:
+            await channel.connect()
+
+        embed = discord.Embed(
+            title="🎶 Now Playing", 
+            color=0xff0000
+        )
+        embed.add_field(name="x", value="`y`", inline=False)
+        embed.add_field(name="x", value=ctx.author.mention, inline=True)
+        embed.add_field(name="x", value="`y`", inline=True)
+        embed.description = "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n- `/z` -"
+
+        view = RadioAdvancedMenu.RadioAdvancedMenu()
+        await ctx.send(embed=embed, view=view)
+
+        async with ctx.typing():
+            player = await YTDLSource.YTDLSource.from_url(url, loop=self.bot.loop)
+            ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
+        await ctx.send(f'Now playing: {player.title}')
+
+    @commands.command()
+    async def channelid(self, ctx):
+        if ctx.author.voice is None:
+            return await ctx.send("Najpierw, dołącz na kanał głosowy.")
+        await ctx.send(f"Channel ID: {ctx.author.voice.channel.id}")
+
+    @commands.command()
+    async def join(self, ctx):
+        """Joins a voice channel and sends radio GUI embed"""
+        channel = self.bot.get_channel(1523625156038103101)
+
+        if channel is None:
+            return await ctx.send("Nie odnaleziono kanału o podanym ID.")
+
+        if ctx.voice_client is not None:
+            await ctx.voice_client.move_to(channel)
+        else:
+            await channel.connect()
+
+        embed = discord.Embed(
+            title="🎶 Now Playing", 
+            color=0xff0000
+        )
+        embed.add_field(name="x", value="`y`", inline=False)
+        embed.add_field(name="x", value=ctx.author.mention, inline=True)
+        embed.add_field(name="x", value="`y`", inline=True)
+        embed.description = "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n- `/z` -"
+
+        view = RadioAdvancedMenu.RadioAdvancedMenu()
+        await ctx.send(embed=embed, view=view)
+
+    @commands.command()
+    async def play(self, ctx, *, query):
+        """Plays a file from the local filesystem"""
+        source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(query))
+        ctx.voice_client.play(source, after=lambda e: print(f'Player error: {e}') if e else None)
+        await ctx.send(f'Now playing: {query}')
+
+    @commands.command()
+    async def yt(self, ctx, *, url):
+        """Plays from a url (almost anything youtube_dl supports)"""
+        async with ctx.typing():
+            player = await YTDLSource.YTDLSource.from_url(url, loop=self.bot.loop)
+            ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
+        await ctx.send(f'Now playing: {player.title}')
+
+    @commands.command()
+    async def stream(self, ctx, *, url):
+        """Streams from a url (same as yt, but doesn't predownload)"""
+        async with ctx.typing():
+            player = await YTDLSource.YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+            ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
+        await ctx.send(f'Now playing: {player.title}')
+
+    @commands.command()
+    async def volume(self, ctx, volume: int):
+        """Changes the player's volume"""
+        if ctx.voice_client is None:
+            return await ctx.send("Not connected to a voice channel.")
+        ctx.voice_client.source.volume = volume / 100
+        await ctx.send(f"Changed volume to {volume}%")
+
+    @commands.command()
+    async def stop(self, ctx):
+        """Stops and disconnects the bot from voice"""
+        await ctx.voice_client.disconnect()
+
+    @play.before_invoke
+    @yt.before_invoke
+    @stream.before_invoke
+    async def ensure_voice(self, ctx):
+        if ctx.voice_client is None:
+            if ctx.author.voice:
+                await ctx.author.voice.channel.connect()
+            else:
+                await ctx.send("Nie jesteś połączony na kanale głosowym.")
+                raise commands.CommandError("Autor nie zjawił się na kanale głosowym.")
+        elif ctx.voice_client.is_playing():
+            ctx.voice_client.stop()
